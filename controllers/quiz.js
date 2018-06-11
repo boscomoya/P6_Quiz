@@ -218,29 +218,15 @@ exports.randomcheck = (req, res, next) => {
 
     const answer = query.answer || "";
     const result = answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim();
-
-    if(result){
-        req.session.score++;
-        if(req.session.toBeResolved.length === 0){
-            req.session.toBeResolved === undefined;
-            res.render('quizzes/random_nomore', {
-                score: req.session.score
-            })
-        }
-        else{
-            res.render('quizzes/random_result', {
-                answer: answer,
-                score: req.session.score,
-                result: result
-            })
-        }
+    const score = req.session.randomPlay.length+result;
+    if(result) {
+        req.session.randomPlay = req.session.randomPlay.concat(quiz.id);
+    } else {
+        req.session.randomPlay = [];
     }
-    else{
-        req.session.toBeResolved === undefined;
-        res.render('quizzes/random_result', {
-            answer: answer,
-            score: req.session.score,
-            result: result
-        })
-    }
+    res.render('quizzes/random_result', {
+        result,
+        answer,
+        score
+    });
 };
