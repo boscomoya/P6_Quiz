@@ -225,3 +225,99 @@ exports.check = (req, res, next) => {
         answer
     });
 };
+exports.randomplay = (req, res, next) =>{
+
+    console.log("quizzes: " + req.session.quizzes);
+    console.log("score: "+ req.session.score);
+    const {quiz, query} = req;
+    const answer = query.answer || "";
+    var lon = 0;
+    var ps = [];
+    /*
+        if(req.session.score >= req.session.quizzes.length){
+            delete req.session.quizzes;
+            delete req.session.score;
+        }
+    */
+    //creo una variable global score de la sesion:
+
+    //hago lo mismo con un almacen de quizzes
+    if(req.session.quizzes === undefined){
+        req.session.score =0;
+        models.quiz.findAll()
+            .then(quizzes => {
+
+                req.session.quizzes = quizzes;
+
+                console.log("quizzes1: " + req.session.quizzes);
+                console.log("score1: "+ req.session.score);
+
+                lon = req.session.quizzes;
+                var i = Math.floor(Math.random() * lon.length);
+                var q = req.session.quizzes[i];
+                req.session.quizzes.splice(i, 1);
+                res.render('quizzes/random_play', {
+                    score: req.session.score,
+                    quiz: q
+                });
+            })
+            .catch(err => console.log(err));
+
+    }else{
+        ps = req.session.quizzes;
+        if(ps.length === 0){
+            var score = req.session.score;
+
+            res.render('quizzes/random_none', {score: score});
+        }else{
+            lon = req.session.quizzes.length;
+            var i = Math.floor(Math.random() * lon);
+            var q = req.session.quizzes[i];
+            req.session.quizzes.splice(i, 1);
+            res.render('quizzes/random_play', {
+                score: req.session.score,
+                quiz: q
+            });
+        }
+    }
+
+
+};
+
+exports.randomcheck = (req, res, next) => {
+    const {quiz, query} = req;
+
+    const answer = query.answer || "";
+    const result = answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim();
+    var score;
+
+    if (result) {
+        req.session.score++;
+        score = req.session.score;
+        if(req.session.quizzes.length===0){
+            delete req.session.quizzes;
+            delete req.session.score;
+            res.render('quizzes/random_none', {score: score});
+        }else{
+
+            res.render('quizzes/random_result', {
+                answer: answer,
+                quiz: quiz,
+                result: result,
+                score: score
+            });
+        }
+    }else{
+        score = req.session.score;
+        delete req.session.quizzes;
+        delete req.session.score;
+        res.render('quizzes/random_result', {
+            answer: answer,
+            quiz: quiz,
+            result: result,
+            score: score
+        });
+    }
+
+
+};
