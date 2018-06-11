@@ -213,20 +213,39 @@ exports.randomplay = (req, res, next) =>{
 };
 
 exports.randomcheck = (req, res, next) => {
-
     const {quiz, query} = req;
 
     const answer = query.answer || "";
     const result = answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim();
-    const score = req.session.randomPlay.length+result;
-    if(result) {
-        req.session.randomPlay = req.session.randomPlay.concat(quiz.id);
-    } else {
-        req.session.randomPlay = [];
+    var score;
+
+    if (result) {
+        req.session.score++;
+        score = req.session.score;
+        if(req.session.quizzes.length===0){
+            delete req.session.quizzes;
+            delete req.session.score;
+            res.render('quizzes/random_none', {score: score});
+        }else{
+
+            res.render('quizzes/random_result', {
+                answer: answer,
+                quiz: quiz,
+                result: result,
+                score: score
+            });
+        }
+    }else{
+        score = req.session.score;
+        delete req.session.quizzes;
+        delete req.session.score;
+        res.render('quizzes/random_result', {
+            answer: answer,
+            quiz: quiz,
+            result: result,
+            score: score
+        });
     }
-    res.render('quizzes/random_result', {
-        result,
-        answer,
-        score
-    });
+
+
 };
