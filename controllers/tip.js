@@ -20,12 +20,16 @@ exports.load = (req, res, next, tipId) => {
 
 // POST /quizzes/:quizId/tips
 exports.create = (req, res, next) => {
- 
+
+    const authorId = req.session.user && req.session.user.id || 0;
+
     const tip = models.tip.build(
         {
             text: req.body.text,
-            quizId: req.quiz.id
+            quizId: req.quiz.id,
+            authorId: authorId
         });
+
 
     tip.save()
     .then(tip => {
@@ -72,5 +76,40 @@ exports.destroy = (req, res, next) => {
         res.redirect('/quizzes/' + req.params.quizId);
     })
     .catch(error => next(error));
+};
+exports.adminOrAuthorRequired = (req, res, next) => {
+    const isAdmin = !!req.session.user.isAdmin;
+    const isAuthor = req.session.user.id === req.tip.authorId;
+    if (isAdmin || isAuthor ){
+        next();
+    }else{
+        res.send(403);
+    }
+};
+
+exports.edit = (req, res, next) => {
+    const {quiz, tip} = req;
+    res.render('tips/edit', {quiz, tip})
+};
+
+exports.update = (req, res, next) => {
+    const {quiz, tip} = req;
+    tip.text = req.body.text;
+    tip.accepted = false;
+
+    tip.save({fields: ["text", "answer"]})
+        .then(quiz => {
+            req.flash('success', 'Quiz edited successfully.');
+            res.redirect('/quizzes/' + quiz.id);
+        })
+        .catch(Sequelize.ValidationError, error => {
+            req.flash('error', 'There are errors in the form:');
+            error.errors.forEach(({message}) => req.flash('error', message));
+            res.render('tips/edit', {quiz, tip});
+        })
+        .catch(error => {
+            req.flash('error', 'Error editing the Quiz: ' + error.message);
+            next(error);
+        });
 };
 
